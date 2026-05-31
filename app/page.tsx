@@ -22,18 +22,12 @@ export default function HomePage() {
             Every product shows Nepali Rupee pricing upfront. Add to cart, review your
             order, and checkout with delivery details.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex justify-center">
             <Link
               href="/products"
               className="inline-flex rounded-full bg-white px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-black hover:bg-neutral-200"
             >
               Start shopping
-            </Link>
-            <Link
-              href="/admin"
-              className="inline-flex rounded-full border border-neutral-600 px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:border-white"
-            >
-              Admin dashboard
             </Link>
           </div>
         </div>
