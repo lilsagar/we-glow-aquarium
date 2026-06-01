@@ -13,6 +13,7 @@ type Props = {
   searchParams?: {
     orderId?: string;
     pid?: string;
+    amt?: string;
   };
 };
 
