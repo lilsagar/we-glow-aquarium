@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "pandeysagar832@gmail.com";
+    }
+
+    function validOrderCreate() {
+      return request.resource.data.keys().hasAll([
+          "createdAt",
+          "status",
+          "customer",
+          "paymentMethod",
+          "items",
+          "subtotalNpr"
+        ])
+        && request.resource.data.status == "pending"
+        && request.resource.data.customer is map
+        && request.resource.data.customer.fullName is string
+        && request.resource.data.customer.phone is string
+        && request.resource.data.customer.address is string
+        && request.resource.data.customer.city is string
+        && request.resource.data.paymentMethod in ["cod", "esewa"]
+        && request.resource.data.items is list
+        && request.resource.data.subtotalNpr is number;
+    }
+
+    match /products/{slug} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin();
+      allow create: if request.auth == null && validOrderCreate();
+      allow update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          "createdAt",
+          "status",
+          "customer",
+          "paymentMethod",
+          "items",
+          "subtotalNpr"
+        ])
+        && request.resource.data.status in ["pending", "paid", "shipped", "cancelled"];
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -2,13 +2,46 @@ import type { Metadata } from "next";
 import { LayoutRoot } from "@/components/layout-root";
 import "./globals.css";
 
+const siteUrl = "https://we-glow-aquarium.example.com";
+const siteImage = "/placeholder.png";
+
 export const metadata: Metadata = {
   title: {
-    default: "We-Glow Aquarium",
-    template: "%s · We-Glow Aquarium",
+    default: "We Glow Aquarium",
+    template: "%s · We Glow Aquarium",
   },
   description:
-    "Beginner-friendly demo aquarium store built with Next.js — tanks, filters, food, and supplies priced in NPR.",
+    "Premium aquarium supplies in Nepal — tanks, filters, lighting, decor, and fish care essentials priced in NPR.",
+  metadataBase: new URL(siteUrl),
+  keywords: [
+    "Nepal aquarium supplies",
+    "aquarium equipment Nepal",
+    "fish tank accessories",
+    "aquarium decor",
+    "aquarium lighting",
+    "aquarium filters",
+    "NPR aquarium store",
+  ],
+  openGraph: {
+    title: "We Glow Aquarium",
+    description:
+      "Premium aquarium supplies in Nepal — tanks, filters, lighting, decor, and fish care essentials.",
+    url: siteUrl,
+    siteName: "We Glow Aquarium",
+    images: [siteImage],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "We Glow Aquarium",
+    description:
+      "Premium aquarium supplies in Nepal — tanks, filters, lighting, decor, and fish care essentials.",
+    images: [siteImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

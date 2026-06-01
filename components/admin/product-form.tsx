@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Product } from "@/lib/catalog";
+import type { Product } from "@/lib/types/product";
+import { getSafeImageUrl } from "@/lib/image-url";
 import {
   createProduct,
-  createUniqueSlug,
-  getCategories,
+  getCategoriesFromProducts,
   updateProduct,
 } from "@/lib/catalog";
+import { uploadImageFile } from "@/lib/firebase/storage";
 import { useCatalog } from "@/components/providers/catalog-provider";
 
 export type ProductFormValues = {
@@ -66,16 +68,52 @@ export function ProductForm({
   product?: Product;
 }) {
   const router = useRouter();
-  const { refresh } = useCatalog();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { products, refresh } = useCatalog();
   const [form, setForm] = useState<ProductFormValues>(
     product ? fromProduct(product) : emptyForm(),
   );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
-  const categories = useMemo(() => getCategories(), []);
+  const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
 
-  function handleSubmit(e: React.FormEvent) {
+  function validateFile(file: File) {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      setUploadError("File is too large. Maximum size is 10 MB.");
+      return false;
+    }
+    return true;
+  }
+
+  const categories = useMemo(
+    () => getCategoriesFromProducts(products),
+    [products],
+  );
+
+  async function handleFileUpload(file: File) {
+    setUploadError(null);
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const url = await uploadImageFile(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      setForm((f) => ({ ...f, imageUrl: url }));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Could not upload image.");
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -104,7 +142,7 @@ export function ProductForm({
 
     try {
       if (mode === "create") {
-        createProduct({
+        await createProduct({
           name: form.name,
           slug: form.slug.trim() || undefined,
           shortDescription: form.shortDescription || form.name,
@@ -117,7 +155,7 @@ export function ProductForm({
           reviewCount: Number.isFinite(reviewCount) ? reviewCount : 0,
         });
       } else if (product) {
-        updateProduct(product.slug, {
+        await updateProduct(product.slug, {
           name: form.name,
           slug: form.slug.trim() || product.slug,
           shortDescription: form.shortDescription,
@@ -132,9 +170,8 @@ export function ProductForm({
       }
       refresh();
       router.push("/admin/products");
-      router.refresh();
-    } catch {
-      setError("Could not save product. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save product.");
       setSaving(false);
     }
   }
@@ -152,17 +189,7 @@ export function ProductForm({
           <input
             className={inputClass}
             value={form.name}
-            onChange={(e) => {
-              const name = e.target.value;
-              setForm((f) => ({
-                ...f,
-                name,
-                slug:
-                  mode === "create" && !f.slug
-                    ? createUniqueSlug(name)
-                    : f.slug,
-              }));
-            }}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             required
           />
         </div>
@@ -221,18 +248,109 @@ export function ProductForm({
             onChange={(e) => setForm((f) => ({ ...f, rating: e.target.value }))}
           />
         </div>
-        <div className="sm:col-span-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Image URL
-          </label>
-          <input
-            type="url"
-            className={inputClass}
-            value={form.imageUrl}
-            onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-            placeholder="https://images.unsplash.com/..."
-            required
-          />
+        <div className="sm:col-span-2 space-y-4">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Image URL
+            </label>
+            <input
+              type="url"
+              className={inputClass}
+              value={form.imageUrl}
+              onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+              placeholder="/placeholder.png"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Upload image
+            </label>
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:border-black disabled:opacity-50"
+            >
+              {uploading ? "Uploading…" : "Choose file"}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!validateFile(file)) return;
+                await handleFileUpload(file);
+              }}
+              className="sr-only"
+            />
+
+            <div
+              className={`mt-4 rounded-3xl border px-4 py-8 text-center transition-all duration-200 ${
+                dragActive
+                  ? "border-cyan-400 bg-cyan-50/50"
+                  : "border-dashed border-neutral-300 bg-neutral-50"
+              }`}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(true);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(false);
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  if (!validateFile(file)) return;
+                  await handleFileUpload(file);
+                }
+              }}
+            >
+              <p className="text-sm font-semibold text-slate-900">
+                Drag & drop an image here
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Or click “Choose file” to select a product photo.
+              </p>
+              <p className="mt-2 text-xs text-slate-400">
+                JPG, PNG, WEBP up to 10MB.
+              </p>
+            </div>
+
+            {uploading ? (
+              <p className="mt-2 text-sm text-neutral-500">
+                Uploading image {uploadProgress ?? 0}%…
+              </p>
+            ) : null}
+            {uploadError ? (
+              <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+            ) : null}
+            {form.imageUrl ? (
+              <div className="relative mt-4 h-52 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+                <Image
+                  src={getSafeImageUrl(form.imageUrl)}
+                  alt="Product preview"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">

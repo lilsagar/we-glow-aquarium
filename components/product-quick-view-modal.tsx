@@ -4,11 +4,12 @@ import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { X, ArrowRight } from "lucide-react";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
 import { formatNpr } from "@/lib/format-npr";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { ProductBadges } from "@/components/product-badges";
 import { StarRating } from "@/components/star-rating";
+import { getSafeImageUrl } from "@/lib/image-url";
 
 type Props = {
   product: Product | null;
@@ -31,6 +32,8 @@ export function ProductQuickViewModal({ product, open, onClose }: Props) {
   }, [open, onClose]);
 
   if (!open || !product) return null;
+
+  const imageUrl = getSafeImageUrl(product.imageUrl);
 
   return (
     <div
@@ -59,7 +62,7 @@ export function ProductQuickViewModal({ product, open, onClose }: Props) {
         <div className="grid overflow-y-auto sm:grid-cols-2">
           <div className="relative aspect-square bg-neutral-100 sm:aspect-auto sm:min-h-[320px]">
             <Image
-              src={product.imageUrl}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover"

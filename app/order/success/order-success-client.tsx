@@ -1,28 +1,67 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { formatNpr } from "@/lib/format-npr";
-import { getOrderById, getPaymentLabel } from "@/lib/orders";
+import { fetchOrderById, getPaymentLabel } from "@/lib/orders";
+import { getSafeImageUrl } from "@/lib/image-url";
+import type { Order } from "@/lib/types/order";
 
 export function OrderSuccessClient() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const [order, setOrder] = useState<Order | null>(null);
+  const [resolvedId, setResolvedId] = useState<string | null>(null);
+  const loading = Boolean(orderId) && resolvedId !== orderId;
 
-  const order = useMemo(() => {
-    if (!orderId) return null;
-    return getOrderById(orderId) ?? null;
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    fetchOrderById(orderId).then((found) => {
+      if (!cancelled) {
+        setOrder(found);
+        setResolvedId(orderId);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [orderId]);
+
+  if (!orderId) {
+    return (
+      <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-lg font-semibold text-black">No order ID</p>
+        <p className="mt-2 text-sm text-neutral-600">
+          Return to checkout or browse products to place an order.
+        </p>
+        <Link
+          href="/products"
+          className="mt-6 inline-flex rounded-full bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-neutral-800"
+        >
+          Continue shopping
+        </Link>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-sm text-neutral-600">Loading your order…</p>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
       <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
         <p className="text-lg font-semibold text-black">Order not found</p>
         <p className="mt-2 text-sm text-neutral-600">
-          This order may have been cleared from your browser storage.
+          We could not find this order in Firestore. Check the order ID or contact support.
         </p>
         <Link
           href="/products"
@@ -96,7 +135,7 @@ export function OrderSuccessClient() {
               <li key={item.slug} className="flex gap-3">
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                   <Image
-                    src={item.imageUrl}
+                    src={getSafeImageUrl(item.imageUrl)}
                     alt={item.name}
                     fill
                     className="object-cover"

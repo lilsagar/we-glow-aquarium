@@ -1,5 +1,5 @@
 import { getProductBadges } from "@/lib/product-badges";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
 
 const toneStyles = {
   bestseller: "bg-black text-white border-black/20",

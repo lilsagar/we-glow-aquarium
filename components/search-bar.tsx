@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { Search } from "lucide-react";
 
 type Props = {
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  onSubmit?: (value: string) => void;
   compact?: boolean;
   id?: string;
   variant?: "dark" | "light";
@@ -13,21 +16,39 @@ type Props = {
 
 export function SearchBar({
   defaultValue = "",
+  value,
+  onValueChange,
+  onSubmit,
   compact = false,
   id = "site-search",
   variant = "dark",
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  const currentQuery = isControlled ? value : query;
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const trimmed = query.trim();
+    const trimmed = currentQuery.trim();
+    if (onSubmit) {
+      onSubmit(trimmed);
+      return;
+    }
+
     if (trimmed) {
       router.push(`/products?q=${encodeURIComponent(trimmed)}`);
     } else {
       router.push("/products");
     }
+  }
+
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    const nextValue = e.target.value;
+    if (!isControlled) {
+      setQuery(nextValue);
+    }
+    onValueChange?.(nextValue);
   }
 
   const isDark = variant === "dark";
@@ -49,8 +70,8 @@ export function SearchBar({
         <input
           id={id}
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={currentQuery}
+          onChange={handleChange}
           placeholder="Search tanks, filters, food…"
           className={`min-w-0 flex-1 border-0 bg-transparent px-4 focus:outline-none ${
             compact ? "text-sm" : "text-sm sm:text-base"

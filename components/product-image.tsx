@@ -1,5 +1,6 @@
 import Image from "next/image";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
+import { getSafeImageUrl } from "@/lib/image-url";
 
 type Props = {
   product: Pick<Product, "name" | "slug" | "imageUrl">;
@@ -14,12 +15,14 @@ export function ProductImage({
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   className = "",
 }: Props) {
+  const imageUrl = getSafeImageUrl(product.imageUrl);
+
   return (
     <div
       className={`relative aspect-square w-full overflow-hidden bg-neutral-100 ${className}`}
     >
       <Image
-        src={product.imageUrl}
+        src={imageUrl}
         alt={product.name}
         fill
         priority={priority}

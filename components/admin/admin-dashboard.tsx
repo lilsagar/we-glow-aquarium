@@ -1,36 +1,49 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatNpr } from "@/lib/format-npr";
-import { getAllOrders, getOrderStatusLabel } from "@/lib/orders";
+import { subscribeToOrders, getOrderStatusLabel } from "@/lib/orders";
+import type { Order } from "@/lib/types/order";
 import { useCatalog } from "@/components/providers/catalog-provider";
 import { StatCard } from "./stat-card";
 
 export function AdminDashboard() {
-  const { products, ready } = useCatalog();
+  const { products, ready: catalogReady } = useCatalog();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersReady, setOrdersReady] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeToOrders(
+      (list) => {
+        setOrders(list);
+        setOrdersReady(true);
+      },
+      () => setOrdersReady(true),
+    );
+    return unsub;
+  }, []);
 
   const stats = useMemo(() => {
-    const orders = getAllOrders();
     const revenue = orders
       .filter((o) => o.status !== "cancelled")
       .reduce((sum, o) => sum + o.subtotalNpr, 0);
     const pending = orders.filter((o) => o.status === "pending").length;
     const lowStock = products.filter((p) => !p.inStock).length;
-    return { orders, revenue, pending, lowStock };
-  }, [products]);
+    return { revenue, pending, lowStock };
+  }, [orders, products]);
 
-  const recentOrders = stats.orders.slice(0, 5);
+  const recentOrders = orders.slice(0, 5);
 
-  if (!ready) {
+  if (!catalogReady || !ordersReady) {
     return <p className="text-sm text-neutral-500">Loading dashboard…</p>;
   }
 
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total products" value={products.length} hint="In catalog" />
-        <StatCard label="Total orders" value={stats.orders.length} hint="All time (local)" />
+        <StatCard label="Total products" value={products.length} hint="Firestore catalog" />
+        <StatCard label="Total orders" value={orders.length} hint="Firestore orders" />
         <StatCard
           label="Revenue"
           value={formatNpr(stats.revenue)}
@@ -43,7 +56,7 @@ export function AdminDashboard() {
         <div className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <h2 className="font-bold text-black">Recent orders</h2>
-            <p className="text-sm text-neutral-500">Latest activity from your store</p>
+            <p className="text-sm text-neutral-500">Live from Firestore</p>
           </div>
           <Link
             href="/admin/orders"

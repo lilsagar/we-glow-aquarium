@@ -1,4 +1,4 @@
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
 
 export type ProductBadge = {
   label: string;

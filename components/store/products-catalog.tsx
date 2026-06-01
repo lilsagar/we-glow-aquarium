@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCatalog } from "@/components/providers/catalog-provider";
 import { filterProducts } from "@/lib/filter-products";
 import { ProductGrid } from "@/components/product-grid";
@@ -13,7 +14,13 @@ type Props = {
   q?: string;
 };
 
-export function ProductsCatalog({ category, q }: Props) {
+export function ProductsCatalog({ category }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q") ?? "";
+  const activeCategory = searchParams.get("category") ?? category;
+
   const { products, ready } = useCatalog();
 
   const categories = useMemo(
@@ -22,9 +29,30 @@ export function ProductsCatalog({ category, q }: Props) {
   );
 
   const list = useMemo(
-    () => filterProducts(products, { category, q }),
-    [products, category, q],
+    () => filterProducts(products, { category: activeCategory, q: searchQuery }),
+    [products, activeCategory, searchQuery],
   );
+
+  function updateQuery(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value.trim()) {
+      params.set("q", value.trim());
+    } else {
+      params.delete("q");
+    }
+
+    const categoryParam = activeCategory?.trim();
+    if (categoryParam) {
+      params.set("category", categoryParam);
+    } else {
+      params.delete("category");
+    }
+
+    const search = params.toString();
+    router.replace(`${pathname}${search ? `?${search}` : ""}`, {
+      scroll: false,
+    });
+  }
 
   if (!ready) {
     return <p className="text-sm text-neutral-500">Loading products…</p>;
@@ -33,8 +61,8 @@ export function ProductsCatalog({ category, q }: Props) {
   return (
     <>
       <div className="mt-8 space-y-6">
-        <ProductsSearch defaultQuery={q} />
-        <CategoryFilters categories={categories} activeCategory={category} searchQuery={q} />
+        <ProductsSearch query={searchQuery} onQueryChange={updateQuery} onSubmit={updateQuery} />
+        <CategoryFilters categories={categories} activeCategory={activeCategory} searchQuery={searchQuery} />
       </div>
 
       {list.length === 0 ? (

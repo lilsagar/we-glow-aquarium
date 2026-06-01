@@ -2,20 +2,25 @@
 
 import { notFound } from "next/navigation";
 import { formatNpr } from "@/lib/format-npr";
-import { getProductBySlug } from "@/lib/catalog";
-import { useCatalog } from "@/components/providers/catalog-provider";
+import { useCatalog, useProductBySlug } from "@/components/providers/catalog-provider";
 import { ProductBuyBox } from "@/components/product-buy-box";
 import { ProductImage } from "@/components/product-image";
 import { StarRating } from "@/components/star-rating";
 
 export function ProductDetail({ slug }: { slug: string }) {
-  const { ready } = useCatalog();
-  const product = ready ? getProductBySlug(slug) : undefined;
+  const { ready, error } = useCatalog();
+  const product = useProductBySlug(slug);
 
-  if (ready && !product) notFound();
+  if (ready && !product && !error) notFound();
+
+  if (error) {
+    return (
+      <p className="mt-8 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
+    );
+  }
 
   if (!product) {
-    return <p className="text-sm text-neutral-500">Loading product…</p>;
+    return <p className="mt-8 text-sm text-neutral-500">Loading product…</p>;
   }
 
   return (

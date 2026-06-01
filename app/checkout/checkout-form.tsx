@@ -7,10 +7,17 @@ import { formatNpr } from "@/lib/format-npr";
 import {
   generateOrderId,
   PAYMENT_METHODS,
-  saveOrder,
+  saveOrderToFirestore,
   type Order,
   type PaymentMethod,
 } from "@/lib/orders";
+
+const ESEWA_ENDPOINT = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+const ESEWA_SIGNATURE_API = "/api/esewa/signature";
+const ESEWA_PRODUCT_CODE = "EPAYTEST";
+const ESEWA_SUCCESS_URL = "http://localhost:3000/payment/esewa/success";
+const ESEWA_FAILURE_URL = "http://localhost:3000/payment/esewa/failure";
+const ESEWA_SIGNED_FIELDS = "total_amount,transaction_uuid,product_code";
 import { useCart } from "@/components/providers/cart-provider";
 import type { CartLine } from "@/components/providers/cart-provider";
 
@@ -61,6 +68,83 @@ function buildOrder(lines: CartLine[], form: FormState): Order {
   };
 }
 
+async function getEsewaSignature(
+  totalAmount: string,
+  transactionUuid: string,
+): Promise<string> {
+  const response = await fetch(ESEWA_SIGNATURE_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      total_amount: totalAmount,
+      transaction_uuid: transactionUuid,
+      product_code: ESEWA_PRODUCT_CODE,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Unable to generate eSewa signature: ${response.status} ${response.statusText} - ${errorText}`,
+    );
+  }
+
+  const json = await response.json();
+  if (!json.signature) {
+    throw new Error("eSewa signature response did not include a signature.");
+  }
+
+  return json.signature;
+}
+
+async function postToEsewa(order: Order) {
+  const totalAmount = order.subtotalNpr.toFixed(2);
+  const transactionUuid = order.id;
+  const signature = await getEsewaSignature(totalAmount, transactionUuid);
+
+  const fields = {
+    amount: totalAmount,
+    tax_amount: "0.00",
+    total_amount: totalAmount,
+    transaction_uuid: transactionUuid,
+    product_code: ESEWA_PRODUCT_CODE,
+    product_service_charge: "0.00",
+    product_delivery_charge: "0.00",
+    success_url: ESEWA_SUCCESS_URL,
+    failure_url: ESEWA_FAILURE_URL,
+    signed_field_names: ESEWA_SIGNED_FIELDS,
+    signature,
+  } as Record<string, string>;
+
+  console.log("eSewa v2 POST redirect", {
+    endpoint: ESEWA_ENDPOINT,
+    orderId: order.id,
+    totalAmount,
+    transactionUuid,
+    successUrl: ESEWA_SUCCESS_URL,
+    failureUrl: ESEWA_FAILURE_URL,
+    signedFieldNames: ESEWA_SIGNED_FIELDS,
+  });
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = ESEWA_ENDPOINT;
+  form.style.display = "none";
+
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
 export function CheckoutForm() {
   const router = useRouter();
   const { lines, subtotalNpr, clearCart } = useCart();
@@ -97,7 +181,7 @@ export function CheckoutForm() {
   return (
     <form
       className="grid gap-8 lg:grid-cols-3"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!canSubmit || submitting) return;
 
@@ -106,11 +190,20 @@ export function CheckoutForm() {
 
         try {
           const order = buildOrder(lines, form);
-          saveOrder(order);
+          console.log("Saving checkout order", order);
+          await saveOrderToFirestore(order);
+          if (form.paymentMethod === "esewa") {
+            console.log("Order saved, redirecting to eSewa sandbox", order.id);
+            await postToEsewa(order);
+            clearCart();
+            return;
+          }
           clearCart();
           router.push(`/order/success?orderId=${encodeURIComponent(order.id)}`);
-        } catch {
-          setError("Could not place your order. Please try again.");
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : "Could not place your order. Please try again.",
+          );
           setSubmitting(false);
         }
       }}

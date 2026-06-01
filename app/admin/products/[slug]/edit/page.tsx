@@ -4,8 +4,7 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ProductForm } from "@/components/admin/product-form";
-import { getProductBySlug } from "@/lib/catalog";
-import { useCatalog } from "@/components/providers/catalog-provider";
+import { useCatalog, useProductBySlug } from "@/components/providers/catalog-provider";
 
 export default function AdminEditProductPage({
   params,
@@ -15,13 +14,15 @@ export default function AdminEditProductPage({
   const { slug } = use(params);
   const decoded = decodeURIComponent(slug);
   const { ready } = useCatalog();
-  const product = ready ? getProductBySlug(decoded) : undefined;
+  const product = useProductBySlug(decoded);
 
   if (ready && !product) notFound();
 
   return (
     <AdminShell title="Edit product" description={product?.name ?? decoded}>
-      {product ? <ProductForm mode="edit" product={product} /> : (
+      {product ? (
+        <ProductForm mode="edit" product={product} />
+      ) : (
         <p className="text-sm text-neutral-500">Loading product…</p>
       )}
     </AdminShell>

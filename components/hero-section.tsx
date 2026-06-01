@@ -2,75 +2,71 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1544551763-46aef011bacf?w=2400&h=1400&fit=crop&q=85";
+const HERO_IMAGE = "/placeholder.png";
 
 export function HeroSection() {
   return (
-    <section
-      className="relative flex min-h-[min(92vh,820px)] w-full items-end overflow-hidden bg-black text-white sm:min-h-[min(88vh,900px)] sm:items-center"
-      aria-label="We-Glow Aquarium hero"
-    >
+    <section className="relative overflow-hidden bg-slate-950 text-white">
       <div className="absolute inset-0">
         <Image
           src={HERO_IMAGE}
-          alt="Large planted aquarium with crystal clear water"
+          alt="Premium aquarium display with lush plants and dramatic lighting"
           fill
           priority
-          className="scale-105 object-cover object-center animate-hero-zoom"
+          className="object-cover object-center brightness-90"
           sizes="100vw"
         />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,rgba(0,0,0,0.85),transparent)]"
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.18),_transparent_35%)]" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 pb-14 pt-28 sm:pb-20 sm:pt-32 lg:pb-24 lg:pt-36">
-        <div className="max-w-3xl animate-fade-in-up">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-neutral-400 sm:text-xs">
-            We-Glow Aquarium · Nepal
-          </p>
+      <div className="relative mx-auto max-w-7xl px-4 py-24 sm:py-32 lg:py-36">
+        <div className="max-w-3xl space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.35em] text-cyan-200 shadow-sm shadow-cyan-500/10">
+            Premium aquarium essentials
+          </div>
 
-          <h1 className="mt-4 text-[2.5rem] font-bold leading-[1.02] tracking-tight sm:text-6xl md:text-7xl lg:text-[4.5rem]">
-            Where your
-            <br />
-            <span className="text-white">aquarium</span>
-            <br />
-            <span className="text-neutral-400">comes alive.</span>
-          </h1>
+          <div className="space-y-6">
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl">
+              Luxury aquariums for modern Nepalese homes.
+            </h1>
+            <p className="max-w-2xl text-sm leading-8 text-slate-300 sm:text-base">
+              Discover curated tanks, filtration systems, and design-forward accessories with clear NPR pricing and fast local delivery.
+            </p>
+          </div>
 
-          <p className="mt-5 max-w-lg text-sm leading-relaxed text-neutral-300 sm:mt-6 sm:text-base md:text-lg">
-            Premium tanks, filtration, and essentials — curated for modern homes.
-            Every price in Nepali Rupees, delivered with clarity.
-          </p>
-
-          <div className="mt-8 sm:mt-10">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <Link
               href="/products"
-              className="animate-cta group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full bg-white px-8 py-4 text-sm font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] sm:px-10 sm:py-4.5 sm:text-base"
+              className="inline-flex items-center justify-center rounded-full bg-cyan-400 px-8 py-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
-              <span className="relative z-10 flex items-center gap-2.5">
-                Shop now
-                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1 sm:size-5" />
-              </span>
+              Explore the collection
+              <ArrowRight className="ml-3 size-5" />
             </Link>
+            <Link
+              href="/products?category=Tanks"
+              className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-sm font-semibold text-white transition hover:border-white"
+            >
+              Shop tanks
+            </Link>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <p className="font-semibold text-white">Curated selection</p>
+              <p className="mt-2 text-slate-400">Premium aquariums, filters, and supplies chosen for quality.</p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <p className="font-semibold text-white">Transparent pricing</p>
+              <p className="mt-2 text-slate-400">All prices shown clearly in Nepali Rupees for fast checkout.</p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <p className="font-semibold text-white">Reliable delivery</p>
+              <p className="mt-2 text-slate-400">Local shipping and support across Nepal, with every order.</p>
+            </div>
           </div>
         </div>
       </div>
-
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-neutral-100 to-transparent sm:h-32"
-        aria-hidden
-      />
     </section>
   );
 }

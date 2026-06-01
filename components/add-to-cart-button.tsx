@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ShoppingBag } from "lucide-react";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
 import { useCart } from "@/components/providers/cart-provider";
 
 export function AddToCartButton({

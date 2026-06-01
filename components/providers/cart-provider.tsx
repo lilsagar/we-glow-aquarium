@@ -10,7 +10,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getCatalogProducts, type Product } from "@/lib/catalog";
+import { useCatalog } from "@/components/providers/catalog-provider";
+import type { Product } from "@/lib/types/product";
 
 export type CartLine = {
   product: Product;
@@ -60,27 +61,31 @@ function readStoredLines(): StoredLine[] {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { products, ready: catalogReady } = useCatalog();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const userTouched = useRef(false);
+  const hydrated = useRef(false);
 
-  // Hydrate from localStorage on the client after mount (deferred to avoid cascading renders).
   useEffect(() => {
+    if (!catalogReady || hydrated.current) return;
+
     const id = window.setTimeout(() => {
       if (!userTouched.current) {
         const stored = readStoredLines();
         const next: CartLine[] = [];
-        const catalog = getCatalogProducts();
         for (const row of stored) {
-          const product = catalog.find((p) => p.slug === row.slug);
+          const product = products.find((p) => p.slug === row.slug);
           if (product) next.push({ product, quantity: row.quantity });
         }
         setLines(next);
       }
+      hydrated.current = true;
       setStorageReady(true);
     }, 0);
+
     return () => window.clearTimeout(id);
-  }, []);
+  }, [catalogReady, products]);
 
   useEffect(() => {
     if (!storageReady) return;

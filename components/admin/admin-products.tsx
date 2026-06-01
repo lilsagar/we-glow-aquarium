@@ -7,17 +7,25 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { formatNpr } from "@/lib/format-npr";
 import { deleteProduct } from "@/lib/catalog";
 import { useCatalog } from "@/components/providers/catalog-provider";
+import { getSafeImageUrl } from "@/lib/image-url";
 
 export function AdminProducts() {
-  const { products, ready, refresh } = useCatalog();
+  const { products, ready, refresh, error } = useCatalog();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  function handleDelete(slug: string, name: string) {
+  async function handleDelete(slug: string, name: string) {
     if (!window.confirm(`Delete “${name}”? This cannot be undone.`)) return;
     setDeleting(slug);
-    deleteProduct(slug);
-    refresh();
-    setDeleting(null);
+    setActionError(null);
+    try {
+      await deleteProduct(slug);
+      refresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
   }
 
   if (!ready) {
@@ -26,8 +34,14 @@ export function AdminProducts() {
 
   return (
     <div className="space-y-6">
+      {error || actionError ? (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          {actionError ?? error}
+        </p>
+      ) : null}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-neutral-600">{products.length} products in catalog</p>
+        <p className="text-sm text-neutral-600">{products.length} products in Firestore</p>
         <Link
           href="/admin/products/new"
           className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-neutral-800"
@@ -50,60 +64,63 @@ export function AdminProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {products.map((p) => (
-                <tr key={p.slug} className="hover:bg-neutral-50">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                        <Image
-                          src={p.imageUrl}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
+              {products.map((p) => {
+                const imageUrl = getSafeImageUrl(p.imageUrl);
+                return (
+                  <tr key={p.slug} className="hover:bg-neutral-50">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                          <Image
+                            src={imageUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="line-clamp-1 font-semibold text-black">{p.name}</p>
+                          <p className="text-xs text-neutral-500">{p.slug}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-black line-clamp-1">{p.name}</p>
-                        <p className="text-xs text-neutral-500">{p.slug}</p>
+                    </td>
+                    <td className="px-5 py-4 text-neutral-600">{p.category}</td>
+                    <td className="px-5 py-4 font-medium text-black">{formatNpr(p.priceNpr)}</td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          p.inStock
+                            ? "bg-neutral-100 text-neutral-800"
+                            : "bg-neutral-200 text-neutral-500"
+                        }`}
+                      >
+                        {p.inStock ? "In stock" : "Out"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/admin/products/${encodeURIComponent(p.slug)}/edit`}
+                          className="inline-flex size-9 items-center justify-center rounded-lg border border-neutral-200 text-black hover:border-black"
+                          aria-label={`Edit ${p.name}`}
+                        >
+                          <Pencil className="size-4" />
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={deleting === p.slug}
+                          onClick={() => handleDelete(p.slug, p.name)}
+                          className="inline-flex size-9 items-center justify-center rounded-lg border border-neutral-200 text-red-600 hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+                          aria-label={`Delete ${p.name}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-neutral-600">{p.category}</td>
-                  <td className="px-5 py-4 font-medium text-black">{formatNpr(p.priceNpr)}</td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        p.inStock
-                          ? "bg-neutral-100 text-neutral-800"
-                          : "bg-neutral-200 text-neutral-500"
-                      }`}
-                    >
-                      {p.inStock ? "In stock" : "Out"}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        href={`/admin/products/${encodeURIComponent(p.slug)}/edit`}
-                        className="inline-flex size-9 items-center justify-center rounded-lg border border-neutral-200 text-black hover:border-black"
-                        aria-label={`Edit ${p.name}`}
-                      >
-                        <Pencil className="size-4" />
-                      </Link>
-                      <button
-                        type="button"
-                        disabled={deleting === p.slug}
-                        onClick={() => handleDelete(p.slug, p.name)}
-                        className="inline-flex size-9 items-center justify-center rounded-lg border border-neutral-200 text-red-600 hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
-                        aria-label={`Delete ${p.name}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

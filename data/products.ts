@@ -1,16 +1,4 @@
-export type Product = {
-  slug: string;
-  name: string;
-  shortDescription: string;
-  description: string;
-  priceNpr: number;
-  /** 1–5 for display only */
-  rating: number;
-  reviewCount: number;
-  category: string;
-  inStock: boolean;
-  imageUrl: string;
-};
+import type { Product } from "@/lib/types/product";
 
 export const seedProducts: Product[] = [
   {
@@ -24,8 +12,7 @@ export const seedProducts: Product[] = [
     reviewCount: 128,
     category: "Tanks",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1522069169874-bff5831d51b5?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "glass-aquarium-24-inch",
@@ -38,8 +25,7 @@ export const seedProducts: Product[] = [
     reviewCount: 94,
     category: "Tanks",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1544551763-46aef011bacf?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "led-aquarium-light-18w",
@@ -52,8 +38,7 @@ export const seedProducts: Product[] = [
     reviewCount: 210,
     category: "Lighting",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "external-canister-filter",
@@ -66,8 +51,7 @@ export const seedProducts: Product[] = [
     reviewCount: 56,
     category: "Filtration",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "submersible-heater-100w",
@@ -80,8 +64,7 @@ export const seedProducts: Product[] = [
     reviewCount: 301,
     category: "Heating",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1524704654690-b56c05a4a5b7?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "tropical-flakes-500g",
@@ -94,8 +77,7 @@ export const seedProducts: Product[] = [
     reviewCount: 512,
     category: "Food",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1520995930707-4d4c0a4b0bdb?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "river-pebbles-5kg",
@@ -108,8 +90,7 @@ export const seedProducts: Product[] = [
     reviewCount: 88,
     category: "Hardscape",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "air-pump-dual-outlet",
@@ -122,8 +103,7 @@ export const seedProducts: Product[] = [
     reviewCount: 143,
     category: "Air",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1535591273668-5786947ff499?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "digital-ph-tester",
@@ -136,8 +116,7 @@ export const seedProducts: Product[] = [
     reviewCount: 67,
     category: "Testing",
     inStock: false,
-    imageUrl:
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
   {
     slug: "coral-decoration-set",
@@ -150,18 +129,7 @@ export const seedProducts: Product[] = [
     reviewCount: 39,
     category: "Decor",
     inStock: true,
-    imageUrl:
-      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=800&fit=crop&q=80",
+    imageUrl: "/placeholder.png",
   },
 ];
 
-/** @deprecated Use seedProducts or lib/catalog on the client */
-export const products = seedProducts;
-
-export function getProductBySlug(slug: string): Product | undefined {
-  return seedProducts.find((p) => p.slug === slug);
-}
-
-export function getAllProductSlugs(): string[] {
-  return seedProducts.map((p) => p.slug);
-}

@@ -2,13 +2,22 @@
 
 import { SearchBar } from "@/components/search-bar";
 
-export function ProductsSearch({ defaultQuery }: { defaultQuery?: string }) {
+export function ProductsSearch({
+  query,
+  onQueryChange,
+  onSubmit,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+}) {
   return (
     <div className="max-w-xl">
       <SearchBar
-        key={defaultQuery ?? "all"}
         id="products-search"
-        defaultValue={defaultQuery ?? ""}
+        value={query}
+        onValueChange={onQueryChange}
+        onSubmit={onSubmit}
         variant="light"
       />
     </div>

@@ -4,12 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/types/product";
 import { formatNpr } from "@/lib/format-npr";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { ProductBadges } from "@/components/product-badges";
 import { ProductQuickViewModal } from "@/components/product-quick-view-modal";
 import { StarRating } from "@/components/star-rating";
+import { getSafeImageUrl } from "@/lib/image-url";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
@@ -23,6 +24,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           ? "stagger-2"
           : "stagger-3";
 
+  const imageUrl = getSafeImageUrl(product.imageUrl);
+
   return (
     <>
       <article
@@ -32,7 +35,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         <div className="relative aspect-square overflow-hidden bg-neutral-100">
           <Link href={`/products/${product.slug}`} className="block h-full w-full">
             <Image
-              src={product.imageUrl}
+              src={imageUrl}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

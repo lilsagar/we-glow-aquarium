@@ -1,10 +1,16 @@
-import Link from "next/link";
-import { ArrowUpRight, Mail, Share2 } from "lucide-react";
-import { products } from "@/data/products";
+"use client";
 
-const categories = Array.from(new Set(products.map((p) => p.category))).sort();
+import Link from "next/link";
+import { useMemo } from "react";
+import { ArrowUpRight, Mail, Share2 } from "lucide-react";
+import { useCatalog } from "@/components/providers/catalog-provider";
 
 export function Footer() {
+  const { products } = useCatalog();
+  const categories = useMemo(
+    () => Array.from(new Set(products.map((p) => p.category))).sort(),
+    [products],
+  );
   return (
     <footer className="mt-auto border-t border-neutral-800 bg-black text-neutral-300">
       <div className="mx-auto max-w-7xl px-4 py-14">

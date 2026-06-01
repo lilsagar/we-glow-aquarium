@@ -1,30 +1,48 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { formatNpr } from "@/lib/format-npr";
 import {
-  getAllOrders,
-  getOrderStatusLabel,
+  subscribeToOrders,
   getPaymentLabel,
   ORDER_STATUSES,
-  updateOrderStatus,
-  type Order,
-  type OrderStatus,
+  updateOrderStatusInFirestore,
+  getOrderStatusLabel,
 } from "@/lib/orders";
+import type { Order, OrderStatus } from "@/lib/types/order";
 
 export function AdminOrders() {
-  const [tick, setTick] = useState(0);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ready, setReady] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
 
-  const orders = useMemo(() => getAllOrders(), [tick]); // eslint-disable-line react-hooks/exhaustive-deps -- tick forces refresh after status update
+  useEffect(() => {
+    const unsub = subscribeToOrders(
+      (list) => {
+        setOrders(list);
+        setReady(true);
+      },
+      () => setReady(true),
+    );
+    return unsub;
+  }, []);
 
-  function handleStatusChange(orderId: string, status: OrderStatus) {
-    updateOrderStatus(orderId, status);
-    setTick((t) => t + 1);
+  async function handleStatusChange(orderId: string, status: OrderStatus) {
+    setUpdating(orderId);
+    try {
+      await updateOrderStatusInFirestore(orderId, status);
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  if (!ready) {
+    return <p className="text-sm text-neutral-500">Loading orders…</p>;
   }
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-neutral-600">{orders.length} orders stored locally</p>
+      <p className="text-sm text-neutral-600">{orders.length} orders in Firestore</p>
 
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {orders.length === 0 ? (
@@ -46,11 +64,57 @@ export function AdminOrders() {
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {orders.map((order) => (
-                  <OrderRow
-                    key={order.id}
-                    order={order}
-                    onStatusChange={handleStatusChange}
-                  />
+                  <tr key={order.id} className="align-top hover:bg-neutral-50">
+                    <td className="px-5 py-4">
+                      <p className="font-semibold text-black">{order.id}</p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {new Date(order.createdAt).toLocaleString("en-NP", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {order.items.length} {order.items.length === 1 ? "item" : "items"}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="font-medium text-black">{order.customer.fullName}</p>
+                      <p className="text-neutral-600">{order.customer.phone}</p>
+                      <p className="mt-1 max-w-[200px] line-clamp-2 text-xs text-neutral-500">
+                        {order.customer.address}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 text-neutral-600">{order.customer.city}</td>
+                    <td className="px-5 py-4 text-neutral-600">
+                      {getPaymentLabel(order.paymentMethod)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <label className="sr-only" htmlFor={`status-${order.id}`}>
+                        Order status
+                      </label>
+                      <select
+                        id={`status-${order.id}`}
+                        value={order.status}
+                        disabled={updating === order.id}
+                        onChange={(e) =>
+                          handleStatusChange(order.id, e.target.value as OrderStatus)
+                        }
+                        className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-black focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 disabled:opacity-50"
+                      >
+                        {ORDER_STATUSES.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-neutral-400">
+                        {getOrderStatusLabel(order.status)}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 text-right font-bold text-black">
+                      {formatNpr(order.subtotalNpr)}
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -58,62 +122,5 @@ export function AdminOrders() {
         )}
       </div>
     </div>
-  );
-}
-
-function OrderRow({
-  order,
-  onStatusChange,
-}: {
-  order: Order;
-  onStatusChange: (id: string, status: OrderStatus) => void;
-}) {
-  const placed = new Date(order.createdAt).toLocaleString("en-NP", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-
-  return (
-    <tr className="align-top hover:bg-neutral-50">
-      <td className="px-5 py-4">
-        <p className="font-semibold text-black">{order.id}</p>
-        <p className="mt-1 text-xs text-neutral-500">{placed}</p>
-        <p className="mt-1 text-xs text-neutral-500">
-          {order.items.length} {order.items.length === 1 ? "item" : "items"}
-        </p>
-      </td>
-      <td className="px-5 py-4">
-        <p className="font-medium text-black">{order.customer.fullName}</p>
-        <p className="text-neutral-600">{order.customer.phone}</p>
-        <p className="mt-1 max-w-[200px] text-xs text-neutral-500 line-clamp-2">
-          {order.customer.address}
-        </p>
-      </td>
-      <td className="px-5 py-4 text-neutral-600">{order.customer.city}</td>
-      <td className="px-5 py-4 text-neutral-600">{getPaymentLabel(order.paymentMethod)}</td>
-      <td className="px-5 py-4">
-        <label className="sr-only" htmlFor={`status-${order.id}`}>
-          Order status
-        </label>
-        <select
-          id={`status-${order.id}`}
-          value={order.status}
-          onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-black focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
-        >
-          {ORDER_STATUSES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-neutral-400">
-          {getOrderStatusLabel(order.status)}
-        </p>
-      </td>
-      <td className="px-5 py-4 text-right font-bold text-black">
-        {formatNpr(order.subtotalNpr)}
-      </td>
-    </tr>
   );
 }
