@@ -10,10 +10,12 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams?: {
+  searchParams: {
     orderId?: string;
     pid?: string;
     amt?: string;
+    total_amount?: string;
+    amount?: string;
   };
 };
 
@@ -21,6 +23,7 @@ export default async function EsewaSuccessPage({ searchParams }: Props) {
   const orderId = searchParams?.orderId ?? searchParams?.pid;
   const amount =
     searchParams?.amt ?? searchParams?.total_amount ?? searchParams?.amount;
+
 
   if (!orderId) {
     return (
@@ -113,3 +116,4 @@ export default async function EsewaSuccessPage({ searchParams }: Props) {
     </main>
   );
 }
+
