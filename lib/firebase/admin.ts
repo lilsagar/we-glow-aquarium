@@ -1,5 +1,7 @@
+import * as admin from "firebase-admin";
 import { cert, type ServiceAccount } from "firebase-admin/app";
-import type { Firestore } from "firebase-admin/firestore";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
+
 const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
@@ -27,5 +29,5 @@ export function getAdminFirestore(): Firestore {
     });
   }
 
-  return admin.firestore();
+  return getFirestore(admin.app());
 }
