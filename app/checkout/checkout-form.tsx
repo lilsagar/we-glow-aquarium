@@ -15,8 +15,19 @@ import {
 const ESEWA_ENDPOINT = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
 const ESEWA_SIGNATURE_API = "/api/esewa/signature";
 const ESEWA_PRODUCT_CODE = "EPAYTEST";
-const ESEWA_SUCCESS_URL = "http://localhost:3000/payment/esewa/success";
-const ESEWA_FAILURE_URL = "http://localhost:3000/payment/esewa/failure";
+
+function getEsewaUrls() {
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  return {
+    successUrl: `${baseUrl}/payment/esewa/success`,
+    failureUrl: `${baseUrl}/payment/esewa/failure`,
+  };
+}
+
 const ESEWA_SIGNED_FIELDS = "total_amount,transaction_uuid,product_code";
 import { useCart } from "@/components/providers/cart-provider";
 import type { CartLine } from "@/components/providers/cart-provider";
@@ -100,6 +111,7 @@ async function getEsewaSignature(
 }
 
 async function postToEsewa(order: Order) {
+  const { successUrl, failureUrl } = getEsewaUrls();
   const totalAmount = order.subtotalNpr.toFixed(2);
   const transactionUuid = order.id;
   const signature = await getEsewaSignature(totalAmount, transactionUuid);
@@ -112,8 +124,8 @@ async function postToEsewa(order: Order) {
     product_code: ESEWA_PRODUCT_CODE,
     product_service_charge: "0.00",
     product_delivery_charge: "0.00",
-    success_url: ESEWA_SUCCESS_URL,
-    failure_url: ESEWA_FAILURE_URL,
+    success_url: successUrl,
+    failure_url: failureUrl,
     signed_field_names: ESEWA_SIGNED_FIELDS,
     signature,
   } as Record<string, string>;
@@ -123,8 +135,8 @@ async function postToEsewa(order: Order) {
     orderId: order.id,
     totalAmount,
     transactionUuid,
-    successUrl: ESEWA_SUCCESS_URL,
-    failureUrl: ESEWA_FAILURE_URL,
+    successUrl,
+    failureUrl,
     signedFieldNames: ESEWA_SIGNED_FIELDS,
   });
 
