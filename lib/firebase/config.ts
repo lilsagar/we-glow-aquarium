@@ -31,11 +31,16 @@ export function getFirebaseClientConfig(): FirebaseClientConfig {
   };
 }
 
+export function normalizeAdminEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export function getAdminEmails(): string[] {
   const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "";
+
   return raw
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
+    .split(/\s*,\s*/)
+    .map((email) => normalizeAdminEmail(email))
     .filter(Boolean);
 }
 
