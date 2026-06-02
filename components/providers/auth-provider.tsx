@@ -14,7 +14,11 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
-import { getAdminEmails, isFirebaseConfigured } from "@/lib/firebase/config";
+import {
+  getAdminEmails,
+  isFirebaseConfigured,
+  normalizeAdminEmail,
+} from "@/lib/firebase/config";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 type AuthContextValue = {
@@ -29,9 +33,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function checkIsAdmin(user: User | null): boolean {
   if (!user?.email) return false;
+
   const allowed = getAdminEmails();
   if (allowed.length === 0) return false;
-  return allowed.includes(user.email.toLowerCase());
+
+  const candidate = normalizeAdminEmail(user.email);
+  return allowed.includes(candidate);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
