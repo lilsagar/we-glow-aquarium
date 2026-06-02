@@ -104,7 +104,7 @@ export default async function EsewaSuccessPage({ searchParams }: Props) {
             className="inline-flex items-center justify-center rounded-full bg-black px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-neutral-800"
           >
             Continue shopping
-          
+          </Link>
         </div>
       </div>
     </main>
