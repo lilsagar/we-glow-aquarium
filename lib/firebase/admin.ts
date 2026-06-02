@@ -1,7 +1,5 @@
-import admin from "firebase-admin";
-import { credential, type ServiceAccount } from "firebase-admin/app";
+import { cert, type ServiceAccount } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
-
 const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
@@ -25,7 +23,7 @@ function getServiceAccount(): ServiceAccount {
 export function getAdminFirestore(): Firestore {
   if (!admin.apps.length) {
     admin.initializeApp({
-      credential: credential.cert(getServiceAccount()),
+      credential: cert(getServiceAccount()),
     });
   }
 
