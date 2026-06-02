@@ -104,13 +104,7 @@ export default async function EsewaSuccessPage({ searchParams }: Props) {
             className="inline-flex items-center justify-center rounded-full bg-black px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-neutral-800"
           >
             Continue shopping
-          </Link>
-          <Link
-            href="/admin/orders"
-            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-black hover:border-black"
-          >
-            View order in admin
-          </Link>
+          
         </div>
       </div>
     </main>
